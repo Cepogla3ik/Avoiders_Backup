@@ -17,8 +17,13 @@ const pagesSlice = createSlice({
     initialState,
     reducers: {
         setPagesState: (state, action: PayloadAction<Partial<PagesState>>) => {
-            state.game = action.payload.game ?? state.game;
-            state.home = action.payload.home ?? state.home;
+          const targetPage = Object.keys(action.payload)[0] as keyof PagesState;
+
+          if (!targetPage) return;
+
+          (Object.keys(state) as Array<keyof PagesState>).forEach((key) => {
+              state[key] = key === targetPage;
+          });
         }
     }
 });
