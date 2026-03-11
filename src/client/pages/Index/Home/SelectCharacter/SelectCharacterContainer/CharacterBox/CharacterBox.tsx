@@ -1,6 +1,6 @@
 import styles from './CharacterBox.module.scss';
 import { setPagesState } from "@client/store/slices";
-import { useAppDispatch } from "@client/store/storep";
+import { useAppDispatch } from "@client/store/store";
 
 interface SelectCharacterBoxProps {
   hero: string;

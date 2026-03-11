@@ -1,4 +1,10 @@
 .canvas {
-  display: none;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: block;
   background-color: hsl(270 10% 20%);
+  height: 100vh;
+  aspect-ratio: 20 / 12;
 }
