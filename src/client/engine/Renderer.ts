@@ -1,16 +1,52 @@
-import GameWorld from "@server/GameWorld/GameWorld";
+/* export default class Renderer {
+  private ctx: CanvasRenderingContext2D;
+  private running = false;
 
-export default class Renderer {
+  private segments: any[] = [];
+  private entities: any[] = [];
+
   constructor(canvas: HTMLCanvasElement) {
-    canvas.getContext("2d");
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("Canvas context not found");
+    
+    this.ctx = ctx;
   }
   // TODO
 
   start() {
-    const gameWorld = new GameWorld();
-    console.log("CanvasGame launched!", gameWorld);
+    this.running = true;
+    requestAnimationFrame(() => this.render());
   }
   stop() {
-    console.log("CanvasGame stopped");
+    this.running = false;
   }
-}
+
+  setWorldData(segments: any[], entities: any[]) {
+    this.segments = segments;
+    this.entities = entities;
+  }
+
+  private render() {
+    if (!this.running) return;
+
+    const ctx = this.ctx;
+    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+    requestAnimationFrame(() => this.render());
+  }
+
+  private drawSegments() {
+    const ctx = this.ctx;
+
+    for (const seg of this.segments) {
+      ctx.fillStyle = "gray";
+
+      ctx.fillRect(
+        seg.position.x,
+        seg.position.y,
+        seg.width,
+        seg.height
+      );
+    }
+  }
+} */
