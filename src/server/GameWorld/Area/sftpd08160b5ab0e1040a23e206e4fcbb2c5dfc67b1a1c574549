@@ -1,0 +1,226 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var Player_ts_1 = require("../entities/Player/Player.ts");
+var Body_ts_1 = require("../physics/Body.ts");
+var CheckCollision_ts_1 = require("../physics/util/CheckCollision.ts");
+var Segment_ts_1 = require("./segments/Segment.ts");
+var Area = /** @class */ (function () {
+    function Area(gameWorld) {
+        this._segments = new Set();
+        this._players = new Set();
+        this.hasNewPlayers = false;
+        this.updating = false;
+        this.addingEntities = false;
+        this.removingEntities = false;
+        this._addedEntities = new Set();
+        this._removedEntities = new Set();
+        this._entities = new Set();
+        this._gameWorld = gameWorld;
+        this._body = new Body_ts_1.default(0, 0);
+        var seg1 = new Segment_ts_1.default(300, 20, this);
+        seg1.body.position.set(50, 50);
+        this._segments.add(seg1);
+        var seg2 = new Segment_ts_1.default(200, 20, this);
+        seg2.body.position.set(100, 150);
+        this._segments.add(seg2);
+    }
+    Object.defineProperty(Area.prototype, "body", {
+        get: function () { return this._body; },
+        enumerable: false,
+        configurable: true
+    });
+    Object.defineProperty(Area.prototype, "segments", {
+        get: function () { return this._segments; },
+        enumerable: false,
+        configurable: true
+    });
+    Object.defineProperty(Area.prototype, "players", {
+        get: function () { return this._players; },
+        enumerable: false,
+        configurable: true
+    });
+    Object.defineProperty(Area.prototype, "isUpdating", {
+        get: function () { return this.updating; },
+        enumerable: false,
+        configurable: true
+    });
+    Object.defineProperty(Area.prototype, "isAddingEntities", {
+        get: function () { return this.addingEntities; },
+        enumerable: false,
+        configurable: true
+    });
+    Object.defineProperty(Area.prototype, "isRemovingEntities", {
+        get: function () { return this.removingEntities; },
+        enumerable: false,
+        configurable: true
+    });
+    Object.defineProperty(Area.prototype, "entities", {
+        get: function () { return this._entities; },
+        enumerable: false,
+        configurable: true
+    });
+    Area.prototype.update = function (delta) {
+        this.updating = true;
+        this.addedEntitiesProcess();
+        this.physicsProcess(delta);
+        this.sendNetDataProcess();
+        this.removedEntitiesProcess();
+        this.hasNewPlayers = false;
+        this.updating = false;
+    };
+    // Processes
+    Area.prototype.addedEntitiesProcess = function () {
+        this.addingEntities = true;
+        for (var _i = 0, _a = this._addedEntities; _i < _a.length; _i++) {
+            var entity = _a[_i];
+            if (entity instanceof Player_ts_1.default) {
+                this.hasNewPlayers = true;
+                this._players.add(entity);
+            }
+            this._entities.add(entity);
+        }
+        this._addedEntities.clear();
+        this.addingEntities = false;
+    };
+    Area.prototype.removedEntitiesProcess = function () {
+        this.removingEntities = true;
+        for (var _i = 0, _a = this._removedEntities; _i < _a.length; _i++) {
+            var entity = _a[_i];
+            if (entity instanceof Player_ts_1.default)
+                this._players.delete(entity);
+            this._entities.delete(entity);
+        }
+        this._removedEntities.clear();
+        this.removingEntities = false;
+    };
+    Area.prototype.physicsProcess = function (delta) {
+        var FIRST_VELOCITY_ITERATION = 0;
+        var LAST_VELOCITY_ITERATION = FIRST_VELOCITY_ITERATION + this._gameWorld.VelocityIterations - 1;
+        var FIRST_POSITION_ITERATION = LAST_VELOCITY_ITERATION + 1;
+        var LAST_POSITION_ITERATION = FIRST_POSITION_ITERATION + this._gameWorld.PositionIterations - 1;
+        var LAST_ITERATION = LAST_POSITION_ITERATION;
+        var TOTAL_ITERATIONS = LAST_POSITION_ITERATION + 1;
+        var entities = Array.from(this._entities);
+        for (var iteration = 0; iteration < TOTAL_ITERATIONS; iteration++) {
+            this.physicsStep(delta, entities, FIRST_VELOCITY_ITERATION <= iteration && iteration <= LAST_VELOCITY_ITERATION, iteration === LAST_ITERATION, iteration === FIRST_VELOCITY_ITERATION);
+        }
+    };
+    Area.prototype.sendNetDataProcess = function () {
+        var fullEntitiesNetData = [];
+        var entitiesNetData = [];
+        var areaConfig = {
+            segments: Array.from(this._segments).map(function (seg) { return ({
+                position: { x: seg.body.position.x, y: seg.body.position.y },
+                width: seg.shape.width,
+                height: seg.shape.height
+            }); })
+        };
+        for (var _i = 0, _a = this._entities; _i < _a.length; _i++) {
+            var entity = _a[_i];
+            if (entity.area !== this)
+                continue;
+            if (this.hasNewPlayers)
+                fullEntitiesNetData.push(entity.fullNetData);
+            if (entity.isNewOnArea)
+                entitiesNetData.push(entity.fullNetData);
+            else {
+                var netData = entity.netData;
+                if (netData)
+                    entitiesNetData.push(netData);
+            }
+            if (!(entity instanceof Player_ts_1.default))
+                entity.nullify();
+        }
+        // console.log("SEND:", entitiesNetData.length);
+        for (var _b = 0, _c = this._players; _b < _c.length; _b++) {
+            var player = _c[_b];
+            if (player.area !== this)
+                continue;
+            /* if (player.isNewOnArea){
+              player.send(fullEntitiesNetData, areaConfig);
+            }
+            else player.send(entitiesNetData); */
+            if (player.isNewOnArea || this.hasNewPlayers) {
+                console.log("[SERVER] SEND INIT");
+                player.sendInit(fullEntitiesNetData, areaConfig);
+                player.isNewOnArea = false;
+            }
+            else {
+                player.sendUpdate(entitiesNetData);
+            }
+            player.nullify();
+        }
+        console.log("Players in area:", this._players.size);
+    };
+    Area.prototype.physicsStep = function (delta, entities, isVelocityStep, isLastStep, _isFirstStep) {
+        if (isVelocityStep === void 0) { isVelocityStep = false; }
+        if (isLastStep === void 0) { isLastStep = false; }
+        if (_isFirstStep === void 0) { _isFirstStep = false; }
+        for (var i = 0; i < entities.length; i++) {
+            var entity = entities[i];
+            if (entity.area !== this || entity.isDestroyed)
+                continue;
+            if (isVelocityStep)
+                entity.body.update(delta / this._gameWorld.VelocityIterations);
+            if (entity.body.shape && !entity.body.isStatic) {
+                for (var _i = 0, _a = this._segments; _i < _a.length; _i++) {
+                    var segment = _a[_i];
+                    if (entity.body.shape.isCanCollide(segment.shape) && entity.body.checkCollision(this._body, segment.shape, false)) {
+                        entity.onCollision(segment);
+                    }
+                }
+            }
+            for (var j = i + 1; j < entities.length; j++) {
+                var entity2 = entities[j];
+                if (entity2.area !== this || entity2.isDestroyed)
+                    continue;
+                // if (entity2.isDestroyed) continue;
+                if (entity.body.shape) {
+                    for (var _b = 0, _c = entity2.body.sensors; _b < _c.length; _b++) {
+                        var sensor = _c[_b];
+                        if ((0, CheckCollision_ts_1.default)(entity2.body, sensor, entity.body, entity.body.shape))
+                            entity2.onSensorCollision(sensor, entity);
+                    }
+                }
+                if (entity2.body.shape) {
+                    for (var _d = 0, _e = entity.body.sensors; _d < _e.length; _d++) {
+                        var sensor = _e[_d];
+                        if ((0, CheckCollision_ts_1.default)(entity.body, sensor, entity2.body, entity2.body.shape))
+                            entity.onSensorCollision(sensor, entity);
+                    }
+                }
+                if (!(entity.body.isStatic && entity2.body.isStatic) && entity.body.shape && entity2.body.shape) {
+                    if ((entity.body.shape.isCanCollide(entity2.body.shape) || entity2.body.shape.isCanCollide(entity.body.shape)) && entity.body.canCollide(entity2.body)) {
+                        if ((0, CheckCollision_ts_1.default)(entity.body, entity.body.shape, entity2.body, entity2.body.shape)) {
+                            if (entity.body.shape.isCanCollide(entity2.body.shape))
+                                entity.onCollision(entity2);
+                            if (entity2.body.shape.isCanCollide(entity.body.shape))
+                                entity2.onCollision(entity);
+                        }
+                    }
+                }
+            }
+            if (isLastStep) {
+                if (entity.area !== this)
+                    continue;
+                entity.update(delta);
+            }
+        }
+    };
+    Area.prototype.addEntity = function (entity) {
+        if (this.isAddingEntities)
+            throw new Error("Area already locked for add entities!");
+        this._addedEntities.add(entity);
+        /* if (entity instanceof Player) this._players.add(entity);
+        this._entities.add(entity); */
+    };
+    Area.prototype.removeEntity = function (entity) {
+        if (this.isRemovingEntities)
+            throw new Error("Area already locked for remove entities!");
+        this._removedEntities.add(entity);
+        /* if (entity instanceof Player) this._players.delete(entity);
+        this._entities.delete(entity); */
+    };
+    return Area;
+}());
+exports.default = Area;

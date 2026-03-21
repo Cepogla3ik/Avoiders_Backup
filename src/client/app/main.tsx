@@ -5,6 +5,7 @@ import { Provider } from "react-redux";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import Index from "../pages/Index/Index";
 import NotFound from "@client/pages/NotFound/NotFound";
+import "../network/socket";
 import "./main.scss";
 
 // socketTest();

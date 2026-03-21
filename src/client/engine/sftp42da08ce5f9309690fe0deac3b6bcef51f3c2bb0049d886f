@@ -1,17 +1,47 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-var GameWorld_1 = require("@server/GameWorld/GameWorld");
 var Renderer = /** @class */ (function () {
     function Renderer(canvas) {
-        canvas.getContext("2d");
+        this.running = false;
+        this.segments = [];
+        this.entities = [];
+        var ctx = canvas.getContext("2d");
+        if (!ctx)
+            throw new Error("Canvas context not found");
+        this.ctx = ctx;
     }
     // TODO
     Renderer.prototype.start = function () {
-        var gameWorld = new GameWorld_1.default();
-        console.log("CanvasGame launched!", gameWorld);
+        var _this = this;
+        this.running = true;
+        requestAnimationFrame(function () { return _this.render(); });
     };
     Renderer.prototype.stop = function () {
-        console.log("CanvasGame stopped");
+        this.running = false;
+    };
+    Renderer.prototype.setWorldData = function (segments, entities) {
+        this.segments = segments;
+        this.entities = entities;
+    };
+    Renderer.prototype.updateEntities = function (entities) {
+        this.entities = entities;
+    };
+    Renderer.prototype.render = function () {
+        var _this = this;
+        if (!this.running)
+            return;
+        var ctx = this.ctx;
+        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        this.drawSegments();
+        requestAnimationFrame(function () { return _this.render(); });
+    };
+    Renderer.prototype.drawSegments = function () {
+        var ctx = this.ctx;
+        for (var _i = 0, _a = this.segments; _i < _a.length; _i++) {
+            var seg = _a[_i];
+            ctx.fillStyle = "gray";
+            ctx.fillRect(seg.position.x, seg.position.y, seg.width, seg.height);
+        }
     };
     return Renderer;
 }());

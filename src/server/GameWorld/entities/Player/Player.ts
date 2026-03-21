@@ -61,7 +61,7 @@ export default class Player extends Entity<PlayerNetData> {
 
   // Socket
   private firstSend: boolean = true;
-  send(entitiesNetData?: GameUpdate["entities"], areaConfig?: GameUpdate["area"]) {
+  /* send(entitiesNetData?: GameUpdate["entities"], areaConfig?: GameUpdate["area"]) {
     if (this._socket.readyState === this._socket.OPEN) {
       this._socket.send(JSON.stringify({
         id: this.firstSend ? this.id : undefined,
@@ -71,6 +71,26 @@ export default class Player extends Entity<PlayerNetData> {
 
       this.firstSend = false;
     }
+  } */
+  sendInit(entities: GameUpdate["entities"], area: GameUpdate["area"]) {
+    if (this._socket.readyState === this._socket.OPEN) {
+      this._socket.send(JSON.stringify({
+        type: "init",
+        id: this.id,
+        entities,
+        area
+      }));
+    }
+    console.log("AREA SENT");
+  }
+  sendUpdate(entities: GameUpdate["entities"]) {
+    if (this._socket.readyState === this._socket.OPEN) {
+      this._socket.send(JSON.stringify({
+        type: "update",
+        entities
+      }));
+    }
+    console.log("sendUpdate executed");
   }
   onInput(input: PlayerInput) {
     if (!IsValidPlayerInput(input)) return;
@@ -88,5 +108,6 @@ export default class Player extends Entity<PlayerNetData> {
     /* this._inputs.push(input);
     if (this._inputs.length >= 100) this._inputs.shift(); */
   }
+  public isNewOnArea: boolean = true;
   onDisconnect() {}
 }

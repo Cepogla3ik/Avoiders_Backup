@@ -36,7 +36,13 @@ export default class Area {
     this._gameWorld = gameWorld;
     this._body = new Body(0, 0);
 
-    this._segments.add(new Segment(100, 200, this));
+    const seg1 = new Segment(300, 20, this);
+    seg1.body.position.set(50, 50);
+    this._segments.add(seg1);
+
+    const seg2 = new Segment(200, 20, this);
+    seg2.body.position.set(100, 150);
+    this._segments.add(seg2);
   }
 
   update(delta: number) {
@@ -99,7 +105,11 @@ export default class Area {
     const entitiesNetData = [];
 
     const areaConfig = {
-      segments: [{ position: { x: 0, y: 0 }, width: 100, height: 200 }]
+      segments: Array.from(this._segments).map(seg => ({
+        position: { x: seg.body.position.x, y: seg.body.position.y },
+        width: seg.shape.width,
+        height: seg.shape.height
+      }))
     };
 
     for (const entity of this._entities) {
@@ -114,16 +124,27 @@ export default class Area {
 
       if (!(entity instanceof Player)) entity.nullify();
     }
+    // console.log("SEND:", entitiesNetData.length);
     for (const player of this._players) {
       if (player.area !== this) continue;
 
-      if (player.isNewOnArea){
+      /* if (player.isNewOnArea){
         player.send(fullEntitiesNetData, areaConfig);
       }
-      else player.send(entitiesNetData);
+      else player.send(entitiesNetData); */
+      if (player.isNewOnArea || this.hasNewPlayers) {
+        console.log("[SERVER] SEND INIT");
+        player.sendInit(fullEntitiesNetData, areaConfig);
+        player.isNewOnArea = false;
+      }
+      else {
+        player.sendUpdate(entitiesNetData);
+      }
 
       player.nullify();
     }
+    
+    console.log("Players in area:", this._players.size);
   }
   
   private physicsStep(delta: number, entities: Entity[], isVelocityStep: boolean = false, isLastStep: boolean = false, _isFirstStep: boolean = false) {

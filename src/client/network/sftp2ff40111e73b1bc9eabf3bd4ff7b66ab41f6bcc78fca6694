@@ -1,0 +1,40 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var rendererStore_1 = require("../engine/rendererStore");
+var protocol = location.protocol === "https:" ? "wss" : "ws";
+var ws = new WebSocket("".concat(protocol, "://").concat(location.host, "/ws"));
+ws.addEventListener("open", function () { return console.log("connected"); });
+ws.addEventListener("message", function (event) {
+    var data = JSON.parse(event.data);
+    var renderer = (0, rendererStore_1.getRenderer)();
+    if (!renderer)
+        return;
+    if (data.type === "init")
+        renderer.setWorldData(data.area.segments, data.entities);
+    if (data.type === "update")
+        renderer.updateEntities(data.entities);
+    console.log("RECEIVE:", data);
+});
+var mouseX = 0;
+var mouseY = 0;
+window.addEventListener("mousemove", function (e) {
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+});
+setInterval(function () {
+    if (ws.readyState !== WebSocket.OPEN)
+        return;
+    var centerX = window.innerWidth / 2;
+    var centerY = window.innerHeight / 2;
+    var dx = mouseX - centerX;
+    var dy = mouseY - centerY;
+    var length = Math.sqrt(dx * dx + dy * dy);
+    if (length > 0) {
+        dx /= length;
+        dy /= length;
+    }
+    ws.send(JSON.stringify({ direction: { x: dx, y: dy } }));
+}, 16);
+ws.addEventListener("close", function () { return console.log("disconnected"); });
+ws.addEventListener("error", function (e) { return console.error("ws error", e); });
+exports.default = ws;

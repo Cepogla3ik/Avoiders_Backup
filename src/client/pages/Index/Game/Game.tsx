@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
-import Renderer from '../../../engine/Renderer';
+import Renderer from '@client/engine/Renderer';
+import { setRenderer } from "@client/engine/rendererStore";
 import styles from './Game.module.scss';
 
 export default function Game() {
@@ -12,12 +13,15 @@ export default function Game() {
 
     const renderer = new Renderer(canvas);
     rendererRef.current = renderer;
+    
+    setRenderer(renderer);
 
     renderer.start();
 
     return () => {
       renderer.stop();
       rendererRef.current = null;
+      setRenderer(null);
     };
   }, []);
 

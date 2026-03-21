@@ -1,0 +1,10 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.getRenderer = exports.setRenderer = void 0;
+var renderer = null;
+var setRenderer = function (r) {
+    renderer = r;
+};
+exports.setRenderer = setRenderer;
+var getRenderer = function () { return renderer; };
+exports.getRenderer = getRenderer;

@@ -1,4 +1,4 @@
-export default function socketTest() {
+/* export default function socketTest() {
   const protocol = location.protocol === "https:" ? "wss" : "ws";
   const ws = new WebSocket(`${protocol}://${location.host}/ws`);
 
@@ -35,4 +35,4 @@ export default function socketTest() {
 
     ws.send(JSON.stringify({ direction: { x: dx, y: dy } }));
   }, 16.6);
-}
+} */

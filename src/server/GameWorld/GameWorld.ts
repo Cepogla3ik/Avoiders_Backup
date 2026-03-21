@@ -28,6 +28,9 @@ export default class GameWorld {
 
   // TODO
   private _area: Area = new Area(this);
+  get area() {
+    return this._area;
+  }
 
   constructor(tps: number = 60, maxStepsPerTick: number = 5, velocityIterations: number = 8, positionIterations: number = 3) {
     this.TickRate = tps;
@@ -50,6 +53,11 @@ export default class GameWorld {
 
 
     this._area.update(delta);
+    
+    const entities = [...this._players].map(p => p.getFullNetData());
+    for (const player of this._players) {
+      player.sendUpdate(entities);
+    }
   }
 
   private tick(now: number) {

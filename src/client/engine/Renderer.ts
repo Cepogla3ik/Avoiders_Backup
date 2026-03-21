@@ -1,9 +1,23 @@
-/* export default class Renderer {
+import type { Vec2Like } from "@shared/utils/Vec2Like";
+
+interface SegmentData {
+  position: Vec2Like;
+  width: number;
+  height: number;
+}
+
+interface EntityData {
+  position: Vec2Like;
+  radius: number;
+  color?: string;
+}
+
+export default class Renderer {
   private ctx: CanvasRenderingContext2D;
   private running = false;
 
-  private segments: any[] = [];
-  private entities: any[] = [];
+  private segments: SegmentData[] = [];
+  private entities: EntityData[] = [];
 
   constructor(canvas: HTMLCanvasElement) {
     const ctx = canvas.getContext("2d");
@@ -21,8 +35,12 @@
     this.running = false;
   }
 
-  setWorldData(segments: any[], entities: any[]) {
+  setWorldData(segments: SegmentData[], entities: EntityData[]) {
     this.segments = segments;
+    this.entities = entities;
+  }
+  
+  updateEntities(entities: EntityData[]) {
     this.entities = entities;
   }
 
@@ -31,6 +49,8 @@
 
     const ctx = this.ctx;
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    
+    this.drawSegments();
 
     requestAnimationFrame(() => this.render());
   }
@@ -40,13 +60,7 @@
 
     for (const seg of this.segments) {
       ctx.fillStyle = "gray";
-
-      ctx.fillRect(
-        seg.position.x,
-        seg.position.y,
-        seg.width,
-        seg.height
-      );
+      ctx.fillRect(seg.position.x, seg.position.y, seg.width, seg.height);
     }
   }
-} */
+}
