@@ -81,7 +81,6 @@ var Player = /** @class */ (function (_super) {
                 area: area
             }));
         }
-        console.log("AREA SENT");
     };
     Player.prototype.sendUpdate = function (entities) {
         if (this._socket.readyState === this._socket.OPEN) {
@@ -90,7 +89,6 @@ var Player = /** @class */ (function (_super) {
                 entities: entities
             }));
         }
-        console.log("sendUpdate executed");
     };
     Player.prototype.onInput = function (input) {
         if (!(0, IsValidPlayerInput_ts_1.default)(input))

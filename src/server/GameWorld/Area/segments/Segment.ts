@@ -10,6 +10,6 @@ export default class Segment extends GameObject {
   constructor(width: number, height: number, area: Area) {
     super(area.body);
     this.area = area;
-    this.shape = new BoxShape(width, height, undefined, true).setMask(CollisionMask.AREA_FLOOR);
+    this.shape = new BoxShape(width * 10, height * 10, undefined, true).setMask(CollisionMask.AREA_FLOOR);
   }
 }

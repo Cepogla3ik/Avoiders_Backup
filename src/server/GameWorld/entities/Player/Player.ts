@@ -81,7 +81,6 @@ export default class Player extends Entity<PlayerNetData> {
         area
       }));
     }
-    console.log("AREA SENT");
   }
   sendUpdate(entities: GameUpdate["entities"]) {
     if (this._socket.readyState === this._socket.OPEN) {
@@ -90,7 +89,6 @@ export default class Player extends Entity<PlayerNetData> {
         entities
       }));
     }
-    console.log("sendUpdate executed");
   }
   onInput(input: PlayerInput) {
     if (!IsValidPlayerInput(input)) return;

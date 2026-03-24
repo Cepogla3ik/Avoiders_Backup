@@ -36,13 +36,13 @@ export default class Area {
     this._gameWorld = gameWorld;
     this._body = new Body(0, 0);
 
-    const seg1 = new Segment(300, 20, this);
-    seg1.body.position.set(50, 50);
+    const seg1 = new Segment(8, 16, this);
+    seg1.body.position.set(135, 100);
     this._segments.add(seg1);
 
-    const seg2 = new Segment(200, 20, this);
+    /* const seg2 = new Segment(200, 20, this);
     seg2.body.position.set(100, 150);
-    this._segments.add(seg2);
+    this._segments.add(seg2); */
   }
 
   update(delta: number) {

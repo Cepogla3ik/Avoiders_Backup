@@ -1,20 +1,41 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.applyPendingInit = exports.connect = void 0;
 var rendererStore_1 = require("../engine/rendererStore");
-var protocol = location.protocol === "https:" ? "wss" : "ws";
-var ws = new WebSocket("".concat(protocol, "://").concat(location.host, "/ws"));
-ws.addEventListener("open", function () { return console.log("connected"); });
-ws.addEventListener("message", function (event) {
-    var data = JSON.parse(event.data);
-    var renderer = (0, rendererStore_1.getRenderer)();
-    if (!renderer)
-        return;
-    if (data.type === "init")
-        renderer.setWorldData(data.area.segments, data.entities);
-    if (data.type === "update")
-        renderer.updateEntities(data.entities);
-    console.log("RECEIVE:", data);
-});
+var ws = null;
+var pendingInit = null;
+function connect() {
+    var protocol = location.protocol === "https:" ? "wss" : "ws";
+    ws = new WebSocket("".concat(protocol, "://").concat(location.host, "/ws"));
+    ws.addEventListener("open", function () { return console.log("connected"); });
+    ws.addEventListener("message", function (event) {
+        var data = JSON.parse(event.data);
+        var renderer = (0, rendererStore_1.getRenderer)();
+        if (data.type === "init") {
+            console.log("INIT DATA:", data.area.segments);
+            if (!renderer) {
+                pendingInit = data;
+                return;
+            }
+            renderer.setWorldData(data.area.segments, data.entities);
+        }
+        if (data.type === "update") {
+            if (!renderer)
+                return;
+            renderer.updateEntities(data.entities);
+        }
+    });
+    ws.addEventListener("close", function () { return console.log("disconnected"); });
+    ws.addEventListener("error", function (e) { return console.error("ws error", e); });
+}
+exports.connect = connect;
+function applyPendingInit(renderer) {
+    if (pendingInit) {
+        renderer.setWorldData(pendingInit.area.segments, pendingInit.entities);
+        pendingInit = null;
+    }
+}
+exports.applyPendingInit = applyPendingInit;
 var mouseX = 0;
 var mouseY = 0;
 window.addEventListener("mousemove", function (e) {
@@ -22,7 +43,7 @@ window.addEventListener("mousemove", function (e) {
     mouseY = e.clientY;
 });
 setInterval(function () {
-    if (ws.readyState !== WebSocket.OPEN)
+    if (!ws || ws.readyState !== WebSocket.OPEN)
         return;
     var centerX = window.innerWidth / 2;
     var centerY = window.innerHeight / 2;
@@ -35,6 +56,3 @@ setInterval(function () {
     }
     ws.send(JSON.stringify({ direction: { x: dx, y: dy } }));
 }, 16);
-ws.addEventListener("close", function () { return console.log("disconnected"); });
-ws.addEventListener("error", function (e) { return console.error("ws error", e); });
-exports.default = ws;

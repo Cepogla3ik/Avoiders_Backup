@@ -1,23 +1,45 @@
 import { getRenderer } from "../engine/rendererStore";
 
-const protocol = location.protocol === "https:" ? "wss" : "ws";
-const ws = new WebSocket(`${protocol}://${location.host}/ws`);
+let ws: WebSocket | null = null;
+let pendingInit = null;
 
-ws.addEventListener("open", () => console.log("connected"));
+export function connect() {
+  const protocol = location.protocol === "https:" ? "wss" : "ws";
+  ws = new WebSocket(`${protocol}://${location.host}/ws`);
 
-ws.addEventListener("message", (event) => {
-  const data = JSON.parse(event.data);
+  ws.addEventListener("open", () => console.log("connected"));
 
-  const renderer = getRenderer();
-  if (!renderer) return;
-  
-  if (data.type === "init") renderer.setWorldData(data.area.segments, data.entities);
-  
-  if (data.type === "update") renderer.updateEntities(data.entities);
-  
-  console.log("RECEIVE:", data);
-});
+  ws.addEventListener("message", (event) => {
+    const data = JSON.parse(event.data);
+    const renderer = getRenderer();
 
+    if (data.type === "init") {
+      console.log("INIT DATA:", data.area.segments);
+      
+      if (!renderer) {
+        pendingInit = data;
+        return;
+      }
+
+      renderer.setWorldData(data.area.segments, data.entities);
+    }
+
+    if (data.type === "update") {
+      if (!renderer) return;
+      renderer.updateEntities(data.entities);
+    }
+  });
+
+  ws.addEventListener("close", () => console.log("disconnected"));
+  ws.addEventListener("error", (e) => console.error("ws error", e));
+}
+
+export function applyPendingInit(renderer: Renderer) {
+  if (pendingInit) {
+    renderer.setWorldData(pendingInit.area.segments, pendingInit.entities);
+    pendingInit = null;
+  }
+}
 
 let mouseX = 0;
 let mouseY = 0;
@@ -28,7 +50,7 @@ window.addEventListener("mousemove", (e) => {
 });
 
 setInterval(() => {
-  if (ws.readyState !== WebSocket.OPEN) return;
+  if (!ws || ws.readyState !== WebSocket.OPEN) return;
 
   const centerX = window.innerWidth / 2;
   const centerY = window.innerHeight / 2;
@@ -44,9 +66,3 @@ setInterval(() => {
 
   ws.send(JSON.stringify({ direction: { x: dx, y: dy } }));
 }, 16);
-
-
-ws.addEventListener("close", () => console.log("disconnected"));
-ws.addEventListener("error", (e) => console.error("ws error", e));
-
-export default ws;

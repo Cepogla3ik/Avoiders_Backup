@@ -2,12 +2,17 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 var Renderer = /** @class */ (function () {
     function Renderer(canvas) {
+        var _this = this;
         this.running = false;
         this.segments = [];
         this.entities = [];
         var ctx = canvas.getContext("2d");
         if (!ctx)
             throw new Error("Canvas context not found");
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        this.resize(canvas);
+        window.addEventListener("resize", function () { return _this.resize(canvas); });
         this.ctx = ctx;
     }
     // TODO
@@ -19,7 +24,12 @@ var Renderer = /** @class */ (function () {
     Renderer.prototype.stop = function () {
         this.running = false;
     };
+    Renderer.prototype.resize = function (canvas) {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    };
     Renderer.prototype.setWorldData = function (segments, entities) {
+        console.log("SET WORLD DATA:", segments);
         this.segments = segments;
         this.entities = entities;
     };
@@ -37,10 +47,24 @@ var Renderer = /** @class */ (function () {
     };
     Renderer.prototype.drawSegments = function () {
         var ctx = this.ctx;
+        var segScale = 10;
         for (var _i = 0, _a = this.segments; _i < _a.length; _i++) {
             var seg = _a[_i];
+            var position = seg.position, width = seg.width, height = seg.height;
+            var segX = position.x, segY = position.y;
+            var segWidth = width / segScale;
+            var segHeight = height / segScale;
             ctx.fillStyle = "gray";
-            ctx.fillRect(seg.position.x, seg.position.y, seg.width, seg.height);
+            ctx.fillRect(segX, segY, segWidth * 10, segHeight * 10);
+            ctx.strokeStyle = "dimgray";
+            var segStrokeWidth = 2;
+            for (var h = 0; h < segWidth + 1; h++) {
+                ctx.beginPath();
+                ctx.lineWidth = segStrokeWidth;
+                ctx.moveTo(segX + h * 10, segY);
+                ctx.lineTo(segX + h * 10, segY + height);
+                ctx.stroke();
+            }
         }
     };
     return Renderer;

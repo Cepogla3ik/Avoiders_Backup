@@ -17,12 +17,12 @@ var Area = /** @class */ (function () {
         this._entities = new Set();
         this._gameWorld = gameWorld;
         this._body = new Body_ts_1.default(0, 0);
-        var seg1 = new Segment_ts_1.default(300, 20, this);
-        seg1.body.position.set(50, 50);
+        var seg1 = new Segment_ts_1.default(8, 16, this);
+        seg1.body.position.set(135, 100);
         this._segments.add(seg1);
-        var seg2 = new Segment_ts_1.default(200, 20, this);
+        /* const seg2 = new Segment(200, 20, this);
         seg2.body.position.set(100, 150);
-        this._segments.add(seg2);
+        this._segments.add(seg2); */
     }
     Object.defineProperty(Area.prototype, "body", {
         get: function () { return this._body; },
